@@ -75,7 +75,17 @@ impl Editor {
             (KeyModifiers::CONTROL, KeyCode::Char('q')) => {
                 self.should_quit = true;
             }
-            (_, KeyCode::Up | KeyCode::Left | KeyCode::Down | KeyCode::Right) => {
+            (
+                _,
+                KeyCode::Up
+                | KeyCode::Left
+                | KeyCode::Down
+                | KeyCode::Right
+                | KeyCode::PageUp
+                | KeyCode::PageDown
+                | KeyCode::End
+                | KeyCode::Home,
+            ) => {
                 self.move_cursor(pressed_key.code);
             }
             _ => {
@@ -102,6 +112,10 @@ impl Editor {
                     x = x.saturating_add(1);
                 }
             }
+            KeyCode::PageUp => y = 0,
+            KeyCode::PageDown => y = height,
+            KeyCode::Home => x = 0,
+            KeyCode::End => x = width,
             _ => (),
         }
         self.cursor_position = Position { x, y }
