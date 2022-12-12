@@ -7,9 +7,16 @@ use crossterm::{
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug)]
+pub struct Position {
+    pub x: usize,
+    pub y: usize,
+}
+
+#[derive(Debug)]
 pub struct Editor {
     should_quit: bool,
     terminal: Terminal,
+    cursor_position: Position,
 }
 
 impl Editor {
@@ -34,19 +41,20 @@ impl Editor {
         Self {
             should_quit: false,
             terminal: Terminal::defalut().expect("Failed to initialize terminal"),
+            cursor_position: Position { x: 0, y: 0 },
         }
     }
 
     fn refresh_screen(&self) -> crossterm::Result<()> {
         Terminal::cursor_hide()?;
-        Terminal::cursor_postition(0, 0)?;
+        Terminal::cursor_position(&Position { x: 0, y: 0 })?;
 
         if self.should_quit {
             Terminal::clear_screen()?;
             println!("Goodbye.\r");
         } else {
             self.draw_rows()?;
-            Terminal::cursor_postition(0, 0)?;
+            Terminal::cursor_position(&self.cursor_position)?;
         }
         Terminal::cursor_show()?;
         Terminal::flush()
@@ -67,10 +75,25 @@ impl Editor {
             (KeyModifiers::CONTROL, KeyCode::Char('q')) => {
                 self.should_quit = true;
             }
+            (_, KeyCode::Up | KeyCode::Left | KeyCode::Down | KeyCode::Right) => {
+                self.move_cursor(pressed_key.code);
+            }
             _ => {
                 println!("{:?} \r", pressed_key);
             }
         }
+    }
+
+    fn move_cursor(&mut self, key: KeyCode) {
+        let Position { mut x, mut y } = self.cursor_position;
+        match key {
+            KeyCode::Up => y = y.saturating_sub(1),
+            KeyCode::Down => y = y.saturating_add(1),
+            KeyCode::Left => x = x.saturating_sub(1),
+            KeyCode::Right => x = x.saturating_add(1),
+            _ => (),
+        }
+        self.cursor_position = Position { x, y }
     }
 
     fn draw_welcome_message(&self) {

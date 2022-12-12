@@ -6,6 +6,8 @@ use crossterm::{
     terminal::{self, Clear, ClearType},
 };
 
+use crate::Position;
+
 #[derive(Debug)]
 pub struct Size {
     pub width: u16,
@@ -36,7 +38,10 @@ impl Terminal {
         execute!(stdout(), Clear(ClearType::All))
     }
 
-    pub fn cursor_postition(x: u16, y: u16) -> crossterm::Result<()> {
+    pub fn cursor_position(position: &Position) -> crossterm::Result<()> {
+        let Position { x, y } = &position;
+        let x = *x as u16;
+        let y = *y as u16;
         execute!(stdout(), MoveTo(x, y))
     }
 
