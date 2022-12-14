@@ -1,4 +1,4 @@
-use std::env;
+use std::{cmp, env};
 
 use crate::{Document, Row, Terminal};
 use crossterm::{
@@ -68,10 +68,15 @@ impl Editor {
             println!("Goodbye.\r");
         } else {
             self.draw_rows()?;
-            Terminal::cursor_position(&Position {
-                x: self.cursor_position.x.saturating_sub(self.offset.x),
-                y: self.cursor_position.y.saturating_sub(self.offset.y),
-            })?;
+            let Position { mut x, mut y } = self.cursor_position;
+            x = x.saturating_sub(self.offset.x);
+            x = if let Some(row) = self.document.row(y) {
+                cmp::min(x, row.len().saturating_sub(self.offset.x))
+            } else {
+                0
+            };
+            y = y.saturating_sub(self.offset.y);
+            Terminal::cursor_position(&Position { x, y })?;
         }
         Terminal::cursor_show()?;
         Terminal::flush()
@@ -131,9 +136,12 @@ impl Editor {
 
     fn move_cursor(&mut self, key: KeyCode) {
         let Position { mut x, mut y } = self.cursor_position;
-        let size = self.terminal.size();
         let height = self.document.len();
-        let width = size.width.saturating_sub(1) as usize;
+        let width = if let Some(row) = self.document.row(y) {
+            row.len()
+        } else {
+            0
+        };
         match key {
             KeyCode::Up => y = y.saturating_sub(1),
             KeyCode::Down => {
