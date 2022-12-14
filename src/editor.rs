@@ -125,6 +125,23 @@ impl Editor {
         Ok(())
     }
 
+    fn save(&mut self) {
+        if self.document.file_name.is_none() {
+            let new_name = self.prompt("Save as: ").unwrap_or(None);
+            if new_name.is_none() {
+                self.status_message = StatusMessage::from("Save aborted.".to_string());
+                return;
+            }
+            self.document.file_name = new_name;
+        }
+
+        if self.document.save().is_ok() {
+            self.status_message = StatusMessage::from("File saved successfully.".to_string());
+        } else {
+            self.status_message = StatusMessage::from("Error writing file!".to_string());
+        }
+    }
+
     fn process_keypress(&mut self, pressed_key: KeyEvent) {
         match (pressed_key.modifiers, pressed_key.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('q')) => {
@@ -146,12 +163,7 @@ impl Editor {
             }
 
             (KeyModifiers::CONTROL, KeyCode::Char('s')) => {
-                if self.document.save().is_ok() {
-                    self.status_message =
-                        StatusMessage::from("File saved successfully".to_string());
-                } else {
-                    self.status_message = StatusMessage::from("Error writing file!".to_string());
-                }
+                self.save();
             }
 
             (_, KeyCode::Char(c)) => {
@@ -334,6 +346,32 @@ impl Editor {
             print!("{}", text);
         }
         Ok(())
+    }
+
+    fn prompt(&mut self, prompt: &str) -> crossterm::Result<Option<String>> {
+        let mut result = String::new();
+        'input: loop {
+            self.status_message = StatusMessage::from(format!("{}{}", prompt, result));
+            self.refresh_screen()?;
+            while let Event::Key(pressed_key) = crossterm::event::read()? {
+                match (pressed_key.modifiers, pressed_key.code) {
+                    (KeyModifiers::NONE, KeyCode::Char(c)) => {
+                        result.push(c);
+                    }
+                    (_, KeyCode::Enter) => break 'input,
+                    (_, KeyCode::Esc) => {
+                        result.truncate(0);
+                        break;
+                    }
+                    _ => (),
+                }
+            }
+        }
+        self.status_message = StatusMessage::from(String::new());
+        if result.is_empty() {
+            return Ok(None);
+        }
+        Ok(Some(result))
     }
 }
 
