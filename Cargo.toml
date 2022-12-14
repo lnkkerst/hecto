@@ -8,3 +8,4 @@ authors = ["lnkkerst <lnkkerst04@gmail.com>"]
 
 [dependencies]
 crossterm = "0.25"
+unicode-segmentation = "1"
