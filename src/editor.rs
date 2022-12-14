@@ -11,8 +11,8 @@ use crossterm::{
     terminal::enable_raw_mode,
 };
 
-const STATUS_FG_COLOR: style::Color = style::Color::Cyan;
-const STATUS_BG_COLOR: style::Color = style::Color::DarkGrey;
+const STATUS_FG_COLOR: style::Color = style::Color::Black;
+const STATUS_BG_COLOR: style::Color = style::Color::White;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Default)]
@@ -130,6 +130,12 @@ impl Editor {
             (KeyModifiers::CONTROL, KeyCode::Char('q')) => {
                 self.should_quit = true;
             }
+
+            (_, KeyCode::Char(c)) => {
+                self.document.insert(&self.cursor_position, c);
+                self.move_cursor(KeyCode::Right);
+            }
+
             (
                 _,
                 KeyCode::Up
@@ -143,6 +149,7 @@ impl Editor {
             ) => {
                 self.move_cursor(pressed_key.code);
             }
+
             _ => {
                 println!("{:?} \r", pressed_key);
             }
