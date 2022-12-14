@@ -2,7 +2,7 @@ use std::io::{stdout, Write};
 
 use crossterm::{
     cursor::{self, MoveTo},
-    execute,
+    execute, style,
     terminal::{self, Clear, ClearType},
 };
 
@@ -25,7 +25,7 @@ impl Terminal {
         Ok(Self {
             size: Size {
                 width: size.0,
-                height: size.1,
+                height: size.1.saturating_sub(2),
             },
         })
     }
@@ -59,5 +59,17 @@ impl Terminal {
 
     pub fn clear_current_line() -> crossterm::Result<()> {
         execute!(stdout(), Clear(ClearType::CurrentLine))
+    }
+
+    pub fn set_bg_color(color: style::Color) -> crossterm::Result<()> {
+        execute!(stdout(), style::SetBackgroundColor(color))
+    }
+
+    pub fn reset_color() -> crossterm::Result<()> {
+        execute!(stdout(), style::ResetColor)
+    }
+
+    pub fn set_fg_color(color: style::Color) -> crossterm::Result<()> {
+        execute!(stdout(), style::SetForegroundColor(color))
     }
 }
