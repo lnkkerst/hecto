@@ -16,7 +16,13 @@ const STATUS_BG_COLOR: style::Color = style::Color::White;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const QUIT_TIMES: u8 = 3;
 
-#[derive(Debug, Default)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum SearchDirection {
+    Forward,
+    Backword,
+}
+
+#[derive(Debug, Default, Clone)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
@@ -130,7 +136,7 @@ impl Editor {
 
     fn save(&mut self) {
         if self.document.file_name.is_none() {
-            let new_name = self.prompt("Save as: ").unwrap_or(None);
+            let new_name = self.prompt("Save as: ", |_, _, _| {}).unwrap_or(None);
             if new_name.is_none() {
                 self.status_message = StatusMessage::from("Save aborted.".to_string());
                 return;
@@ -142,6 +148,42 @@ impl Editor {
             self.status_message = StatusMessage::from("File saved successfully.".to_string());
         } else {
             self.status_message = StatusMessage::from("Error writing file!".to_string());
+        }
+    }
+
+    fn search(&mut self) {
+        let old_position = self.cursor_position.clone();
+        let mut direction = SearchDirection::Forward;
+        let query = self
+            .prompt(
+                "Search (ESC to cancel, Arrows to navigate): ",
+                |editor, key, query| {
+                    let mut moved = false;
+                    match key.code {
+                        KeyCode::Right | KeyCode::Down => {
+                            direction = SearchDirection::Forward;
+                            editor.move_cursor(KeyCode::Right);
+                            moved = true;
+                        }
+                        KeyCode::Left | KeyCode::Up => direction = SearchDirection::Backword,
+                        _ => direction = SearchDirection::Forward,
+                    }
+                    if let Some(position) =
+                        editor
+                            .document
+                            .find(query, &editor.cursor_position, direction)
+                    {
+                        editor.cursor_position = position;
+                        editor.scroll();
+                    } else if moved {
+                        editor.move_cursor(KeyCode::Left);
+                    }
+                },
+            )
+            .unwrap_or(None);
+        if query.is_none() {
+            self.cursor_position = old_position;
+            self.scroll();
         }
     }
 
@@ -177,15 +219,7 @@ impl Editor {
                 self.save();
             }
 
-            (KeyModifiers::CONTROL, KeyCode::Char('f')) => {
-                if let Some(query) = self.prompt("Search: ").unwrap_or(None) {
-                    if let Some(position) = self.document.find(&query[..]) {
-                        self.cursor_position = position;
-                    } else {
-                        self.status_message = StatusMessage::from(format!("Not found: {}", query));
-                    }
-                }
-            }
+            (KeyModifiers::CONTROL, KeyCode::Char('f')) => self.search(),
 
             (_, KeyCode::Char(c)) => {
                 self.document.insert(&self.cursor_position, c);
@@ -389,25 +423,35 @@ impl Editor {
         }
     }
 
-    fn prompt(&mut self, prompt: &str) -> Result<Option<String>, crossterm::ErrorKind> {
+    fn prompt<C>(
+        &mut self,
+        prompt: &str,
+        mut callback: C,
+    ) -> Result<Option<String>, crossterm::ErrorKind>
+    where
+        C: FnMut(&mut Self, KeyEvent, &String),
+    {
         let mut result = String::new();
         'input: loop {
             self.status_message = StatusMessage::from(format!("{}{}", prompt, result));
             self.refresh_screen()?;
-            while let Event::Key(pressed_key) = crossterm::event::read()? {
-                match (pressed_key.modifiers, pressed_key.code) {
-                    (KeyModifiers::NONE, KeyCode::Char(c)) => {
-                        result.push(c);
+            loop {
+                if let Event::Key(pressed_key) = crossterm::event::read()? {
+                    match (pressed_key.modifiers, pressed_key.code) {
+                        (KeyModifiers::NONE, KeyCode::Char(c)) => {
+                            result.push(c);
+                        }
+                        (_, KeyCode::Backspace) => result.truncate(result.len().saturating_sub(1)),
+                        (_, KeyCode::Enter) => break 'input,
+                        (_, KeyCode::Esc) => {
+                            result.truncate(0);
+                            break 'input;
+                        }
+                        _ => (),
                     }
-                    (_, KeyCode::Backspace) => result.truncate(result.len().saturating_sub(1)),
-                    (_, KeyCode::Enter) => break 'input,
-                    (_, KeyCode::Esc) => {
-                        result.truncate(0);
-                        break 'input;
-                    }
-                    _ => (),
+                    callback(self, pressed_key, &result);
+                    break;
                 }
-                break;
             }
         }
         self.status_message = StatusMessage::from(String::new());
