@@ -72,4 +72,13 @@ impl Terminal {
     pub fn set_fg_color(color: style::Color) {
         execute!(stdout(), style::SetForegroundColor(color)).unwrap();
     }
+
+    pub fn update_size(&mut self) -> Result<(), crossterm::ErrorKind> {
+        let size = terminal::size()?;
+        self.size = Size {
+            width: size.0,
+            height: size.1.saturating_sub(2),
+        };
+        Ok(())
+    }
 }
