@@ -14,6 +14,7 @@ use crossterm::{
 const STATUS_FG_COLOR: style::Color = style::Color::Black;
 const STATUS_BG_COLOR: style::Color = style::Color::White;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+const QUIT_TIMES: u8 = 3;
 
 #[derive(Debug, Default)]
 pub struct Position {
@@ -44,6 +45,7 @@ pub struct Editor {
     offset: Position,
     document: Document,
     status_message: StatusMessage,
+    quit_times: u8,
 }
 
 impl Editor {
@@ -87,6 +89,7 @@ impl Editor {
             document,
             offset: Position::default(),
             status_message: StatusMessage::from(initial_status),
+            quit_times: QUIT_TIMES,
         }
     }
 
@@ -145,6 +148,14 @@ impl Editor {
     fn process_keypress(&mut self, pressed_key: KeyEvent) {
         match (pressed_key.modifiers, pressed_key.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('q')) => {
+                if self.quit_times > 0 && self.document.is_dirty() {
+                    self.status_message = StatusMessage::from(format!(
+                        "WARNING! FILE has unsaved changes. Press Ctrl-Q {} more times to quit.",
+                        self.quit_times
+                    ));
+                    self.quit_times -= 1;
+                    return;
+                }
                 self.should_quit = true;
             }
 
@@ -176,6 +187,11 @@ impl Editor {
                 self.move_cursor(KeyCode::Right);
             }
 
+            (_, KeyCode::Tab) => {
+                self.document.insert(&self.cursor_position, '\n');
+                self.move_cursor(KeyCode::Right);
+            }
+
             (_, KeyCode::Delete) => {
                 self.document.delete(&self.cursor_position);
             }
@@ -192,6 +208,10 @@ impl Editor {
             }
         }
         self.scroll();
+        if self.quit_times < QUIT_TIMES {
+            self.quit_times = QUIT_TIMES;
+            self.status_message = StatusMessage::from(String::new());
+        }
     }
 
     fn scroll(&mut self) {
@@ -313,12 +333,22 @@ impl Editor {
     fn draw_status_bar(&self) -> crossterm::Result<()> {
         let mut status;
         let width = self.terminal.size().width as usize;
+        let modified_indicator = if self.document.is_dirty() {
+            " (modified)"
+        } else {
+            ""
+        };
         let mut file_name = "[No Name]".to_string();
         if let Some(name) = &self.document.file_name {
             file_name = name.clone();
             file_name.truncate(20);
         }
-        status = format!("{} - {} lines", file_name, self.document.len());
+        status = format!(
+            "{} - {} lines{}",
+            file_name,
+            self.document.len(),
+            modified_indicator
+        );
         let line_indicator = format!(
             "{}/{}",
             self.cursor_position.y.saturating_add(1),
