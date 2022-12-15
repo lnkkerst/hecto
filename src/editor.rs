@@ -232,7 +232,7 @@ impl Editor {
             }
 
             (_, KeyCode::Tab) => {
-                self.document.insert(&self.cursor_position, '\n');
+                self.document.insert(&self.cursor_position, '\t');
                 self.move_cursor(KeyCode::Right);
             }
 
