@@ -68,7 +68,8 @@ impl Editor {
     pub fn default() -> Self {
         enable_raw_mode().unwrap();
         let args: Vec<String> = env::args().collect();
-        let mut initial_status = String::from("HELP: Ctrl-S = save | Ctrl-Q = quit");
+        let mut initial_status =
+            String::from("HELP: Ctrl-F = find | Ctrl-S = save | Ctrl-Q = quit");
         let document = if let Some(file_name) = args.get(1) {
             let doc = Document::open(file_name);
             if let Ok(doc) = doc {
@@ -174,6 +175,16 @@ impl Editor {
 
             (KeyModifiers::CONTROL, KeyCode::Char('s')) => {
                 self.save();
+            }
+
+            (KeyModifiers::CONTROL, KeyCode::Char('f')) => {
+                if let Some(query) = self.prompt("Search: ").unwrap_or(None) {
+                    if let Some(position) = self.document.find(&query[..]) {
+                        self.cursor_position = position;
+                    } else {
+                        self.status_message = StatusMessage::from(format!("Not found: {}", query));
+                    }
+                }
             }
 
             (_, KeyCode::Char(c)) => {
@@ -392,10 +403,11 @@ impl Editor {
                     (_, KeyCode::Enter) => break 'input,
                     (_, KeyCode::Esc) => {
                         result.truncate(0);
-                        break;
+                        break 'input;
                     }
                     _ => (),
                 }
+                break;
             }
         }
         self.status_message = StatusMessage::from(String::new());
