@@ -24,13 +24,14 @@ impl Row {
         let end = cmp::min(end, self.string.len());
         let start = cmp::min(start, end);
         let mut result = String::new();
+        #[allow(clippy::integer_arithmetic)]
         for grapheme in self.string[..]
             .graphemes(true)
             .skip(start)
             .take(end - start)
         {
             if grapheme == "\t" {
-                result.push_str(" ")
+                result.push(' ');
             } else {
                 result.push_str(grapheme);
             }
@@ -63,15 +64,15 @@ impl Row {
         self.update_len();
     }
 
+    #[allow(clippy::integer_arithmetic)]
     pub fn delete(&mut self, at: usize) {
         if at >= self.len() {
             return;
-        } else {
-            let mut result: String = self.string[..].graphemes(true).take(at).collect();
-            let remainder: String = self.string[..].graphemes(true).skip(at + 1).collect();
-            result.push_str(&remainder);
-            self.string = result;
         }
+        let mut result: String = self.string[..].graphemes(true).take(at).collect();
+        let remainder: String = self.string[..].graphemes(true).skip(at + 1).collect();
+        result.push_str(&remainder);
+        self.string = result;
         self.update_len();
     }
 

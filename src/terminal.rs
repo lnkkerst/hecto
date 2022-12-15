@@ -20,7 +20,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    pub fn defalut() -> crossterm::Result<Self> {
+    pub fn defalut() -> Result<Self, crossterm::ErrorKind> {
         let size = terminal::size()?;
         Ok(Self {
             size: Size {
@@ -34,42 +34,42 @@ impl Terminal {
         &self.size
     }
 
-    pub fn clear_screen() -> crossterm::Result<()> {
-        execute!(stdout(), Clear(ClearType::All))
+    pub fn clear_screen() {
+        execute!(stdout(), Clear(ClearType::All)).unwrap();
     }
 
-    pub fn cursor_position(position: &Position) -> crossterm::Result<()> {
+    pub fn cursor_position(position: &Position) {
         let Position { x, y } = &position;
         let x = *x as u16;
         let y = *y as u16;
-        execute!(stdout(), MoveTo(x, y))
+        execute!(stdout(), MoveTo(x, y)).unwrap();
     }
 
-    pub fn flush() -> crossterm::Result<()> {
+    pub fn flush() -> Result<(), std::io::Error> {
         stdout().flush()
     }
 
-    pub fn cursor_hide() -> crossterm::Result<()> {
-        execute!(stdout(), cursor::Hide)
+    pub fn cursor_hide() {
+        execute!(stdout(), cursor::Hide).unwrap();
     }
 
-    pub fn cursor_show() -> crossterm::Result<()> {
-        execute!(stdout(), cursor::Show)
+    pub fn cursor_show() {
+        execute!(stdout(), cursor::Show).unwrap();
     }
 
-    pub fn clear_current_line() -> crossterm::Result<()> {
-        execute!(stdout(), Clear(ClearType::CurrentLine))
+    pub fn clear_current_line() {
+        execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
     }
 
-    pub fn set_bg_color(color: style::Color) -> crossterm::Result<()> {
-        execute!(stdout(), style::SetBackgroundColor(color))
+    pub fn set_bg_color(color: style::Color) {
+        execute!(stdout(), style::SetBackgroundColor(color)).unwrap();
     }
 
-    pub fn reset_color() -> crossterm::Result<()> {
-        execute!(stdout(), style::ResetColor)
+    pub fn reset_color() {
+        execute!(stdout(), style::ResetColor).unwrap();
     }
 
-    pub fn set_fg_color(color: style::Color) -> crossterm::Result<()> {
-        execute!(stdout(), style::SetForegroundColor(color))
+    pub fn set_fg_color(color: style::Color) {
+        execute!(stdout(), style::SetForegroundColor(color)).unwrap();
     }
 }
