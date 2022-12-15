@@ -7,6 +7,7 @@ pub enum Type {
     Match,
     String,
     Character,
+    Comment,
 }
 
 impl Type {
@@ -16,7 +17,12 @@ impl Type {
             Self::Match => style::Color::Blue,
             Self::String => style::Color::Green,
             Self::Character => style::Color::Green,
-            _ => style::Color::White,
+            Self::Comment => style::Color::Grey,
+            _ => style::Color::Rgb {
+                r: 255,
+                g: 255,
+                b: 255,
+            },
         }
     }
 }

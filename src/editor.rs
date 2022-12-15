@@ -12,7 +12,7 @@ use crossterm::{
 };
 
 const STATUS_FG_COLOR: style::Color = style::Color::Black;
-const STATUS_BG_COLOR: style::Color = style::Color::White;
+const STATUS_BG_COLOR: style::Color = style::Color::Grey;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const QUIT_TIMES: u8 = 3;
 

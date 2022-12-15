@@ -9,6 +9,7 @@ pub struct HighlightingOptions {
     numbers: bool,
     strings: bool,
     characters: bool,
+    comments: bool,
 }
 
 impl Default for FileType {
@@ -37,6 +38,7 @@ impl FileType {
                     numbers: true,
                     strings: true,
                     characters: true,
+                    comments: true,
                 },
             };
         }
@@ -55,5 +57,9 @@ impl HighlightingOptions {
 
     pub fn characters(self) -> bool {
         self.characters
+    }
+
+    pub fn comments(self) -> bool {
+        self.comments
     }
 }
