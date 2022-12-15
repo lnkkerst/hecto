@@ -8,6 +8,7 @@ pub enum Type {
     String,
     Character,
     Comment,
+    MultilineComment,
     PrimaryKeywords,
     SecondaryKeywords,
 }
@@ -20,6 +21,7 @@ impl Type {
             Self::String => style::Color::Green,
             Self::Character => style::Color::Green,
             Self::Comment => style::Color::Grey,
+            Self::MultilineComment => style::Color::Grey,
             Self::PrimaryKeywords => style::Color::Yellow,
             Self::SecondaryKeywords => style::Color::Cyan,
             _ => style::Color::Rgb {
