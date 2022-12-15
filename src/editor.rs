@@ -137,8 +137,10 @@ impl Editor {
     fn process_event(&mut self) -> Result<(), crossterm::ErrorKind> {
         let event = event::read()?;
 
-        if let Event::Key(pressed_key) = event {
-            self.process_keypress(pressed_key);
+        match event {
+            Event::Key(pressed_key) => self.process_keypress(pressed_key),
+            Event::Resize(_, _) => self.terminal.update_size()?,
+            _ => (),
         }
 
         Ok(())
